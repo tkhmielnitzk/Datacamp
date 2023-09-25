@@ -21,6 +21,7 @@ c. Describe what you did to make values match the description if they did not
 match.
 '''
 df = pd.read_csv('fitness_class_2212.csv')
+df.describe(include='all')
 print(df)
 df = df.set_index('booking_id')
 
@@ -45,6 +46,17 @@ df = df.astype({
     'category': category})
 print(df)
 
+"""
+- booking_id: the identifier is unique. There are 0 missing values. 
+- mois_comme_membre: type is already 'int64'. There are no missing values.
+- weight : type is already 'float64'.
+- days_before : 
+- day_of_week :
+- hour :
+- category :
+- assisted : 
+"""
+
 ####################################################
 '''
 2. Create a visualization that shows how many bookings attended the class. Use the
@@ -54,19 +66,24 @@ b. Explain whether the observations are balanced across categories of the
 variable attended
 '''
 # A.
+category_colors = ['red', 'green', 'blue', 'purple', 'orange']
 category_counts = df.groupby('category')['attended'].count()
-plt.bar(category_counts.index, category_counts.values)
+plt.bar(category_counts.index, category_counts.values, color=category_colors)
 plt.xlabel('Category')
 plt.ylabel('Count')
 plt.title('Count of attended')
 plt.show()
 
 # B.
+# Figure 1 - Attendance Count shows that the majority of members did not attend the
+# class (0), outnumbering those who did (1). The count of non-attendees is approximately
+# two times higher than the count of attendees.
 category_counts = df['attended'].value_counts()
-plt.bar(category_counts.index, category_counts.values)
+plt.bar(category_counts.index, category_counts.values, color=category_colors)
 plt.xlabel('Attended')
 plt.ylabel('Count')
 plt.title('Count of attended')
+plt.xticks(category_counts.index)
 plt.show()
 
 ####################################################
@@ -75,7 +92,7 @@ plt.show()
 include a visualization that shows the distribution.
 '''
 # 1. Without transformation
-plt.hist(df['months_as_member'], bins=100, density=True, alpha=0.5, label='Histogram')
+plt.hist(df['months_as_member'], bins=100, density=True, alpha=0.5)
 # Probability Density Function (PDF)
 plt.title('Distribution of the number of months as a member')
 plt.xlabel('Months as member')
@@ -85,7 +102,7 @@ plt.grid(True)
 plt.show()
 
 # 2. With log transformation
-plt.hist(np.log(df['months_as_member']), bins=20, density=True, alpha=0.5, label='Histogram')
+plt.hist(np.log(df['months_as_member']), bins=20, density=True, alpha=0.5)
 # Probability Density Function (PDF)
 plt.title('Distribution of the number of months as a member (log transformation)')
 plt.xlabel('Months as member')
@@ -95,7 +112,7 @@ plt.grid(True)
 plt.show()
 
 # BONUS
-plt.hist(df['weight'], bins=100, density=True, alpha=0.5, label='Histogram')
+plt.hist(df['weight'], bins=100, density=True, alpha=0.5)
 # Probability Density Function (PDF)
 plt.title('Distribution of the weight of a member')
 plt.xlabel('Member weight')
@@ -105,7 +122,7 @@ plt.grid(True)
 plt.show()
 
 # 2. With log transformation
-plt.hist(np.log(df['weight']), bins=20, density=True, alpha=0.5, label='Histogram')
+plt.hist(np.log(df['weight']), bins=30, density=True, alpha=0.5)
 # Probability Density Function (PDF)
 plt.title('Distribution of the weight of a member (log transformation)')
 plt.xlabel('Member weight')
@@ -145,6 +162,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, recall_score, precision_score
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import StratifiedKFold
 
 # 2. last preprocessing
 df = pd.get_dummies(df, columns=['day_of_week'], prefix=['day_of_week'], dtype=int)
@@ -156,7 +174,8 @@ df['months_as_member_log'] = np.log(df['months_as_member'])
 df['weight_log'] = np.log(df['weight'])
 
 # DROP DUPLICATES
-# df = df[df['weight']<160]
+df = df[df['weight_log']<5]
+df = df[df['months_as_member'] < 140]
 
 print(df)
 
@@ -203,6 +222,8 @@ X_test_scaled[columns_to_scale] = scaler.fit_transform(X_test_scaled[columns_to_
 You must include your code.
 '''
 
+kfold = StratifiedKFold(n_splits=5, shuffle=True, random_state=1)
+
 # Define the hyperparameter grid you want to search over
 param_grid = {
     'C': [0.001, 0.01, 0.1, 1, 10, 100],  # Regularization parameter
@@ -212,7 +233,7 @@ param_grid = {
 # Initialize the classifier model (e.g., Logistic Regression or Random Forest Classifier)
 log_ = LogisticRegression(max_iter=1000)  # You can change this to RandomForestClassifier()
 # Create a GridSearchCV object
-log = GridSearchCV(estimator=log_, param_grid=param_grid, cv=5, scoring='accuracy')
+log = GridSearchCV(estimator=log_, param_grid=param_grid, cv=kfold, scoring='precision')
 # Fit (train) the model on the training data
 log.fit(X_train, y_train)
 ## log.fit(X_train, y_train)
@@ -236,7 +257,7 @@ param_grid = {
 # Initialize the classifier model (e.g., Logistic Regression or Random Forest Classifier)
 rf_ = RandomForestClassifier()  # You can change this to RandomForestClassifier()
 # Create a GridSearchCV object
-rf = GridSearchCV(estimator=rf_, param_grid=param_grid, cv=5, scoring='accuracy')
+rf = GridSearchCV(estimator=rf_, param_grid=param_grid, cv=kfold, scoring='precision')
 # Fit (train) the model on the training data
 rf.fit(X_train, y_train)
 ## rf.fit(X_train, y_train)
