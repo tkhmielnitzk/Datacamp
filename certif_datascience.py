@@ -47,14 +47,16 @@ df = df.astype({
 print(df)
 
 """
+The dataset contains 1500 rows and 8 columns with missing values before cleaning. I have validated all the columns against the criteria in the dataset table:
+
 - booking_id: the identifier is unique. There are 0 missing values. 
 - mois_comme_membre: type is already 'int64'. There are no missing values.
-- weight : type is already 'float64'.
-- days_before : 
-- day_of_week :
-- hour :
-- category :
-- assisted : 
+- weight: type is already 'float64'. There are 20 missing values replaced by the average weight being 82.61 kg. The minimum value is 55.41 kg -> No weight is below 40 kg.
+- days_before: type 'object' replaced by type 'int32'. There are no missing values
+- day_of_week: There are no missing values, and therefore no values to be replaced by 'unknown'.
+- hour: There are no missing values, and therefore no values to replace with 'unknown'.
+- category: There are no missing values, so no value to replace with 'unknown'.
+- assisted: There are no missing values and therefore no values to remove.
 """
 
 ####################################################
@@ -86,6 +88,14 @@ plt.title('Count of attended')
 plt.xticks(category_counts.index)
 plt.show()
 
+"""
+la catégorie de personnes n'ayant pas participé aux cours malgré l'inscription
+est majoritaire. 
+Dans le jeu de données fourni, seuls 453 participants sur 1500 ont participé
+aux cours, soit 30.37%. 
+On peut dès lors considéré que les observations sont désibiliqurées
+"""
+
 ####################################################
 '''
 3. Describe the distribution of the number of months as a member. Your answer must
@@ -111,6 +121,16 @@ plt.legend()
 plt.grid(True)
 plt.show()
 
+"""
+From Graph 2-1 The Distribution of Number of months as a member, we 
+can also see an outlier, larger than 140. Since we don't have a lot of data, we decided to apply 
+a log transformation. From Graph 2-2, we can see the distribution is much closer to a normal distribution.
+En résumé, la transformation logarithmique n'est pas destinée à améliorer l'interprétation des données, 
+mais plutôt à améliorer la distribution des données pour les rendre plus adaptées aux modèles d'apprentissage 
+automatique qui supposent une distribution normale. Elle est souvent utilisée comme prétraitement des données 
+pour obtenir de meilleures performances de modèle.
+"""
+
 # BONUS
 plt.hist(df['weight'], bins=100, density=True, alpha=0.5)
 # Probability Density Function (PDF)
@@ -131,6 +151,12 @@ plt.legend()
 plt.grid(True)
 plt.show()
 
+"""
+Ce prétraitement est également applicable sur la variable poids.
+Là encore, on peut considérer les poids supérieurs à 140kg comme 
+étant des outliers.
+"""
+
 ####################################################
 '''
 4. Describe the relationship between attendance and number of months as a member.
@@ -147,13 +173,35 @@ df['months_as_member_log'] = np.log(df['months_as_member'])
 sns.boxplot(data=df, x="attended", y="months_as_member_log")
 plt.show()
 
+"""
+We can see that the number of month as a member have the largest range
+and a biggest median when the member attended the course.
+BONUS:
+We can also see that the weight of the member have the largest range and a biggest median 
+when the member didn't attend the course
+"""
+
 ####################################################
 '''
 5. The business wants to predict whether members will attend using the data provided.
 State the type of machine learning problem that this is (regression/ classification/
 clustering).
 '''
-# classification
+
+"""
+Le choix fait est de travailler avec la classification.
+La classification vise à attribuer une étiquette ou une 
+catégorie à un élément en fonction de ses caractéristiques. 
+Contrairement à la régression, la classification travaille 
+avec des variables cibles discrètes ou catégorielles.
+Dans notre cas, nous travaillons avec 2 catégories: 
+- categorie 0: membre n'ayant pas participé au cours
+- categorie 1: membre ayant participé au cours.
+
+Contrairement à la régression et à la classification, 
+le clustering n'implique pas de variable cible préalablement 
+définie. Nous ne sommes donc pas dans ce cas de figure.
+"""
 
 # 1. import packages
 from sklearn.linear_model import LogisticRegression  # Classifier model
@@ -174,7 +222,7 @@ df['months_as_member_log'] = np.log(df['months_as_member'])
 df['weight_log'] = np.log(df['weight'])
 
 # DROP DUPLICATES
-df = df[df['weight_log']<5]
+df = df[df['weight']<140]
 df = df[df['months_as_member'] < 140]
 
 print(df)
